@@ -1,65 +1,93 @@
-import Image from "next/image";
+'use client'
+
+import { loginWithGoogle, sendOTP, verifyOTP } from '@/app/auth/action'
+import { useState } from 'react'
 
 export default function Home() {
+  const [email, setEmail] = useState('')
+  const [isOtpSent, setIsOtpSent] = useState(false)
+  const [message, setMessage] = useState('')
+
+  async function handleSendOtp(formData: FormData) {
+    const res = await sendOTP(formData)
+    if (res?.error) {
+      setMessage(res.error)
+    } else {
+      setMessage('OTP sent! Check your email.')
+      setIsOtpSent(true)
+    }
+  }
+
+  async function handleVerifyOtp(formData: FormData) {
+    const res = await verifyOTP(formData)
+    if (res?.error) setMessage(res.error)
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    // MAIN CONTAINER: Dark gray background, white text
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-900 text-white p-4">
+
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">Sign In</h1>
+          <p className="mt-2 text-gray-400">Test Supabase Auth</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        {/* GOOGLE LOGIN */}
+        <form action={loginWithGoogle}>
+          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition">
+            Sign in with Google
+          </button>
+        </form>
+
+        <div className="relative flex py-5 items-center">
+          <div className="flex-grow border-t border-gray-600"></div>
+          <span className="flex-shrink-0 mx-4 text-gray-400">Or with Email</span>
+          <div className="flex-grow border-t border-gray-600"></div>
+        </div>
+
+        {/* EMAIL OTP LOGIN */}
+        {!isOtpSent ? (
+          <form action={handleSendOtp} className="flex flex-col gap-4">
+            <label className="text-sm font-medium">Email Address</label>
+            <input
+              name="email"
+              type="email"
+              placeholder="you@example.com"
+              // INPUT STYLE: Explicitly White background, Black text
+              className="w-full p-3 rounded bg-white text-black border border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+            <button className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition">
+              Send Code
+            </button>
+          </form>
+        ) : (
+          <form action={handleVerifyOtp} className="flex flex-col gap-4">
+            <p className="text-center text-sm text-gray-300">Enter the code sent to {email}</p>
+            <input type="hidden" name="email" value={email} />
+            <input
+              name="token"
+              type="text"
+              placeholder="123456"
+              // INPUT STYLE: Explicitly White background, Black text
+              className="w-full p-3 rounded bg-white text-black border border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 text-center tracking-widest text-xl"
+              required
+            />
+            <button className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition">
+              Verify Code
+            </button>
+          </form>
+        )}
+
+        {message && (
+          <div className="p-3 bg-red-900/50 border border-red-500 rounded text-red-200 text-center">
+            {message}
+          </div>
+        )}
+      </div>
     </div>
-  );
+  )
 }
